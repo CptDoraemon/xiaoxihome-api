@@ -48,7 +48,7 @@ class NewsService {
 
   async getLastUpdated() {
     try {
-      this.latestNews = await this.collections.lastUpdatedNews.findOne({});
+      this.latestNews = await this.collections.lastUpdatedNews.findOne({}, {projection: {_id: 0}});
       console.log('lastUpdatedNews retrieved from DB');
     } catch (e) {
       console.log('Error occurred when retrieving lastUpdatedNews from DB', e);
@@ -67,6 +67,7 @@ class NewsService {
 
   getNewsInCategory(category) {
     try {
+      console.log(this.latestNews);
       return cloneDeep(this.latestNews[category].articles)
     } catch (e) {
       return []
@@ -89,6 +90,7 @@ class NewsService {
       //   throw new Error()
       // }
       // return data.articles;
+      console.log(category);
       return false
     } catch (e) {
       console.log('_getNewsInCategory() error: ', category, new Date().toISOString(), e);
@@ -99,9 +101,10 @@ class NewsService {
   async update() {
     try {
       const isColdStart = !Object.keys(this.latestNews).length;
-      const delay = isColdStart ? 1000 * 60 * 5 : 0;
-      const waitBetweenCategories = 1000 * 60; // 1 minute
-      const recurringUpdateFrequency = 1000 * 60 * 60 * 2; // 2 hour
+      const delay = isColdStart ? 1000 * 60 * 0.1 : 0;
+      const waitBetweenCategories = 1000 * 60 * 0.01; // 1 minute
+      // const recurringUpdateFrequency = 1000 * 60 * 60 * 2; // 2 hour
+      const recurringUpdateFrequency = 1000 * 2
 
       if (isColdStart) {
         await this.getLastUpdated()
@@ -110,7 +113,7 @@ class NewsService {
       // get latest news from newsapi.org
       let i = 0;
       const getNewsInQueue = async () => {
-        const isLast = i === CATEGORIES.length - 1;
+        const isLast = i === CATEGORY_VALUES.length - 1;
         const category = CATEGORY_VALUES[i];
         const newsInCategory = await this._updateNewsInCategory(category);
         if (newsInCategory) {
@@ -124,7 +127,7 @@ class NewsService {
         }
         if (isLast) {
           console.log('All news updated at: ', new Date().toISOString());
-          setTimeout(() => this.update, recurringUpdateFrequency);
+          setTimeout(() => this.update(), recurringUpdateFrequency);
           this._saveToDB();
           this.saveLastUpdated();
         }
