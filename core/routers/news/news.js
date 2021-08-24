@@ -1,12 +1,10 @@
-const router = require('express').Router();
 const cors = require('cors');
 const corsOptions = {
   origin: '*',
   maxAge: 31536000,
   methods: 'POST'
 };
-
-const graphqlHTTP = require('express-graphql');
+const {graphqlHTTP} = require('express-graphql');
 const {
   GraphQLObjectType,
   GraphQLString,
@@ -43,37 +41,38 @@ const ArticleCategoryType = new GraphQLEnumType({
 });
 
 
-const QueryType = new GraphQLObjectType({
-  name: 'RootQueryType',
-  fields: {
-    getNews: {
-      type: new GraphQLList(ArticleType),
-      args: {
-        category: { type: ArticleCategoryType }
-      },
-      resolve: (source, {category}) => {
-        const data = getCache()[category].articles;
-        return data.map(_ => ({
-          source: _.source.name,
-          author: _.author,
-          title:  _.title,
-          description:  _.description,
-          url:  _.url,
-          urlToImage:  _.urlToImage,
-          publishedAt:  _.publishedAt,
-          content:  _.content,
-        }))
+function getNewsGraphQL(path, app, mongoDBService) {
+  const QueryType = new GraphQLObjectType({
+    name: 'RootQueryType',
+    fields: {
+      getNews: {
+        type: new GraphQLList(ArticleType),
+        args: {
+          category: { type: ArticleCategoryType }
+        },
+        resolve: (source, {category}) => {
+          const data = mongoDBService.newsService.getNewsInCategory(category);
+          return data.map(_ => ({
+            source: _.source.name,
+            author: _.author,
+            title:  _.title,
+            description:  _.description,
+            url:  _.url,
+            urlToImage:  _.urlToImage,
+            publishedAt:  _.publishedAt,
+            content:  _.content,
+          }))
+        }
       }
     }
-  }
-});
+  });
 
-const schema = new GraphQLSchema({ query: QueryType });
+  const schema = new GraphQLSchema({ query: QueryType });
 
-router.use(cors(corsOptions));
-router.use('/', cors(corsOptions), graphqlHTTP({
-  schema: schema,
-  graphiql: true
-}))
+  app.use(path, cors(corsOptions), graphqlHTTP({
+    schema: schema,
+    graphiql: true
+  }))
+}
 
-module.exports = router;
+module.exports = getNewsGraphQL;

@@ -9,7 +9,10 @@ class MongoDBService {
     return new Promise((resolve, reject) => {
       mongoose.connect(process.env.MONGODB_URI, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
+        "auth": { "authSource": "admin" },
+        "user": process.env.MONGODB_USER,
+        "pass": process.env.MONGODB_PASS,
       })
 
       this.db = mongoose.connection;

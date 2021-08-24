@@ -46,41 +46,65 @@ class NewsService {
     }
   }
 
-  getLastUpdated() {
-
+  async getLastUpdated() {
+    try {
+      this.latestNews = await this.collections.lastUpdatedNews.findOne({});
+      console.log('lastUpdatedNews retrieved from DB');
+    } catch (e) {
+      console.log('Error occurred when retrieving lastUpdatedNews from DB', e);
+    }
   }
 
-  async _getNewsInCategory(category) {
+  async saveLastUpdated() {
     try {
-      const res = await axios.get('https://newsapi.org/v2/top-headlines', {
-        params: {
-          apiKey: process.env.NEWS_API_KEY,
-          country: 'ca',
-          ...category !== CATEGORIES.headline && {
-            category
-          }
-        }
-      })
-      const data = res.data;
-      if (body.status !== 'ok') {
-        throw new Error()
-      }
-      return data.articles;
+      await this.collections.lastUpdatedNews.deleteOne({});
+      await this.collections.lastUpdatedNews.insertOne(this.latestNews);
+      console.log('lastUpdatedNews saved to DB');
     } catch (e) {
-      console.log('_getNewsInCategory() error: ', category, new Date().toISOString(), e)
+      console.log('Error occurred when saving lastUpdatedNews to DB', e);
+    }
+  }
+
+  getNewsInCategory(category) {
+    try {
+      return cloneDeep(this.latestNews[category].articles)
+    } catch (e) {
+      return []
+    }
+  }
+
+  async _updateNewsInCategory(category) {
+    try {
+      // const res = await axios.get('https://newsapi.org/v2/top-headlines', {
+      //   params: {
+      //     apiKey: process.env.NEWS_API_KEY,
+      //     country: 'ca',
+      //     ...category !== CATEGORIES.headline && {
+      //       category
+      //     }
+      //   }
+      // })
+      // const data = res.data;
+      // if (body.status !== 'ok') {
+      //   throw new Error()
+      // }
+      // return data.articles;
+      return false
+    } catch (e) {
+      console.log('_getNewsInCategory() error: ', category, new Date().toISOString(), e);
+      return false
     }
   }
 
   async update() {
     try {
       const isColdStart = !Object.keys(this.latestNews).length;
-      const delay = isColdStart ? 1000 * 60 * 0 : 0;
+      const delay = isColdStart ? 1000 * 60 * 5 : 0;
       const waitBetweenCategories = 1000 * 60; // 1 minute
       const recurringUpdateFrequency = 1000 * 60 * 60 * 2; // 2 hour
 
       if (isColdStart) {
-        // const lastUpdated = await getNewsCacheFromDB(currentNewsCollection);
-        // this.latestNews = lastUpdated;
+        await this.getLastUpdated()
       }
 
       // get latest news from newsapi.org
@@ -88,9 +112,12 @@ class NewsService {
       const getNewsInQueue = async () => {
         const isLast = i === CATEGORIES.length - 1;
         const category = CATEGORY_VALUES[i];
-        const newsInCategory = await this._getNewsInCategory(category);
-        this.latestNews[category] = newsInCategory;
-        console.log(`${category} news updated at: `, new Date().toISOString());
+        const newsInCategory = await this._updateNewsInCategory(category);
+        if (newsInCategory) {
+          this.latestNews[category] = newsInCategory;
+          console.log(`${category} news updated at: `, new Date().toISOString());
+        }
+
         i++;
         if (!isLast) {
           setTimeout(getNewsInQueue, waitBetweenCategories);
@@ -99,6 +126,7 @@ class NewsService {
           console.log('All news updated at: ', new Date().toISOString());
           setTimeout(() => this.update, recurringUpdateFrequency);
           this._saveToDB();
+          this.saveLastUpdated();
         }
       };
 
