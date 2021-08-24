@@ -1,6 +1,5 @@
 const express = require('express');
 const app = express();
-const path = require('path');
 const helmet = require('helmet');
 require('dotenv').config();
 const bodyParser = require('body-parser');
@@ -10,11 +9,12 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-const searchNews = require('./api/news/search-news/search-news');
-const newsAnalytics = require('./api/news/news-analytics');
-
-const connectToDB = require('./services/connect-to-db');
-const newsRouter = require('./routers/news/news');
+// const searchNews = require('./api/news/search-news/search-news');
+// const newsAnalytics = require('./api/news/news-analytics');
+//
+// const connectToDB = require('./services/connect-to-db');
+const MongoDBService = require('./services/mongoDB/mongodb');
+// const newsRouter = require('./routers/news/news');
 const xiaoxihomeRouter = require('./routers/xiaoxihome/feedback');
 const weatherRouter = require('./routers/weather/weather');
 const reverseGeocodingRouter = require('./routers/weather/reverse-geocoding');
@@ -25,17 +25,20 @@ app.use(helmet());
 
 (async () => {
   try {
-    const mongoDB = await connectToDB();
+    const mongoDBService = new MongoDBService();
+    await mongoDBService.connect();
+    mongoDBService.finishSetUp();
+    await mongoDBService.newsService.update();
 
-    searchNews(app, newsCollection);
-    newsAnalytics(app, newsCollection);
+    // searchNews(app, newsCollection);
+    // newsAnalytics(app, newsCollection);
 
-    app.use('/api/news', newsRouter);
-    app.use('/api/reversegeocoding', reverseGeocodingRouter);
-    app.use('/api/weather', weatherRouter);
-    app.use('/api/xiaoxihome', xiaoxihomeRouter);
-    app.use('/api/v2ex', v2exRouter);
-    app.use('/api/web-hooks', webHooks);
+    // app.use('/api/news', newsRouter);
+    // app.use('/api/reversegeocoding', reverseGeocodingRouter);
+    // app.use('/api/weather', weatherRouter);
+    // app.use('/api/xiaoxihome', xiaoxihomeRouter);
+    // app.use('/api/v2ex', v2exRouter);
+    // app.use('/api/web-hooks', webHooks);
 
     app.use((err, req, res, next) => {
       if (res.headersSent) {

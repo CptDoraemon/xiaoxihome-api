@@ -1,4 +1,5 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
+const NewsService = require('./news');
 
 class MongoDBService {
   db = null;
@@ -6,7 +7,7 @@ class MongoDBService {
 
   connect() {
     return new Promise((resolve, reject) => {
-      mongoose.connect('mongodb://localhost:27017', {
+      mongoose.connect(process.env.MONGODB_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true
       })
@@ -17,6 +18,7 @@ class MongoDBService {
         reject(err);
       });
       this.db.once('open', () => {
+        console.log('connected to mongoDB')
         this.finishSetUp();
         resolve(this.db);
       })
@@ -24,6 +26,8 @@ class MongoDBService {
   }
 
   finishSetUp() {
-    this.newsService = new
+    this.newsService = new NewsService(this.db)
   }
 }
+
+module.exports = MongoDBService
