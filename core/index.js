@@ -10,37 +10,31 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-const connectToDBs = require('./api/db-connections/connect-to-dbs').connectToDBs;
-const weatherAPI = require('./api/weather').weather;
-const reverseGeoCodingAPI = require('./api/geocoding').reverseGeoCoding;
-const searchCityName = require('./api/search-cityname').searchCityName;
-const getNewsGraphQL = require('./api/news/scheme');
 const searchNews = require('./api/news/search-news/search-news');
 const newsAnalytics = require('./api/news/news-analytics');
 
-const xiaoxihome = require('./routers/xiaoxihome/feedback');
-const v2exAPI = require('./routers/v2ex/v2ex');
+const connectToDB = require('./services/connect-to-db');
+const newsRouter = require('./routers/news/news');
+const xiaoxihomeRouter = require('./routers/xiaoxihome/feedback');
+const weatherRouter = require('./routers/weather/weather');
+const reverseGeocodingRouter = require('./routers/weather/reverse-geocoding');
+const v2exRouter = require('./routers/v2ex/v2ex');
 const webHooks = require('./routers/web-hooks/web-hooks');
 
 app.use(helmet());
 
 (async () => {
   try {
-    const {
-      cityNameDB,
-      currentNewsCollection,
-      newsCollection
-    } = await connectToDBs();
+    const mongoDB = await connectToDB();
 
-    searchCityName(app, cityNameDB);
-    weatherAPI(app);
-    reverseGeoCodingAPI(app);
-    getNewsGraphQL(app, currentNewsCollection);
     searchNews(app, newsCollection);
     newsAnalytics(app, newsCollection);
 
-    app.use('/api/xiaoxihome', xiaoxihome);
-    app.use('/api/v2ex', v2exAPI);
+    app.use('/api/news', newsRouter);
+    app.use('/api/reversegeocoding', reverseGeocodingRouter);
+    app.use('/api/weather', weatherRouter);
+    app.use('/api/xiaoxihome', xiaoxihomeRouter);
+    app.use('/api/v2ex', v2exRouter);
     app.use('/api/web-hooks', webHooks);
 
     app.use((err, req, res, next) => {
