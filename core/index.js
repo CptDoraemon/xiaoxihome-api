@@ -12,8 +12,8 @@ app.use(bodyParser.json())
 // const searchNews = require('./api/news/search-news/search-news');
 // const newsAnalytics = require('./api/news/news-analytics');
 //
-// const connectToDB = require('./services/connect-to-db');
 const MongoDBService = require('./services/mongoDB/mongodb');
+const searchNewsRouter = require('./routers/search-news/search-news');
 const getNewsGraphQL = require('./routers/news/news');
 const xiaoxihomeRouter = require('./routers/xiaoxihome/feedback');
 const weatherRouter = require('./routers/weather/weather');
@@ -30,10 +30,17 @@ app.use(helmet());
     mongoDBService.finishSetUp();
     await mongoDBService.newsService.update();
 
-    // searchNews(app, newsCollection);
+    const newsServiceMiddleware = (req, res, next) => {
+      req.services = {
+        newsService: mongoDBService.newsService
+      };
+      next()
+    }
+
     // newsAnalytics(app, newsCollection);
 
-    getNewsGraphQL('/api/news', app, mongoDBService)
+    getNewsGraphQL('/api/news', app, mongoDBService);
+    app.use('/api/search-news', newsServiceMiddleware, searchNewsRouter);
     // app.use('/api/reversegeocoding', reverseGeocodingRouter);
     // app.use('/api/weather', weatherRouter);
     // app.use('/api/xiaoxihome', xiaoxihomeRouter);
@@ -41,6 +48,7 @@ app.use(helmet());
     // app.use('/api/web-hooks', webHooks);
 
     app.use((err, req, res, next) => {
+      console.log(err);
       if (res.headersSent) {
         return next(err)
       }

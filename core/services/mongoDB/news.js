@@ -101,10 +101,9 @@ class NewsService {
   async update() {
     try {
       const isColdStart = !Object.keys(this.latestNews).length;
-      const delay = isColdStart ? 1000 * 60 * 0.1 : 0;
-      const waitBetweenCategories = 1000 * 60 * 0.01; // 1 minute
-      // const recurringUpdateFrequency = 1000 * 60 * 60 * 2; // 2 hour
-      const recurringUpdateFrequency = 1000 * 2
+      const delay = isColdStart ? 1000 * 60 * 5 : 0;
+      const waitBetweenCategories = 1000 * 60; // 1 minute
+      const recurringUpdateFrequency = 1000 * 60 * 60 * 2; // 2 hour
 
       if (isColdStart) {
         await this.getLastUpdated()

@@ -1,4 +1,4 @@
-const ObjectID = require('mongodb').ObjectID;
+const ObjectId = require('mongodb').ObjectId;
 let EARLIEST_DOCUMENT_DATE = null;
 let LATEST_DOCUMENT_DATE = null;
 
@@ -29,7 +29,7 @@ function getDocumentDate(which, collection) {
             .toArray((err, result) => {
                 if (err) reject(err);
                 const doc = result[0];
-                const time = ObjectID(doc._id).getTimestamp();
+                const time = ObjectId(doc._id).getTimestamp();
                 const ISOString = (new Date(time)).toISOString();
 
                 if (sortBy === -1) {
