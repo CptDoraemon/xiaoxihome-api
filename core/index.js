@@ -9,10 +9,11 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-// const searchNews = require('./api/news/search-news/search-news');
-// const newsAnalytics = require('./api/news/news-analytics');
-//
 const MongoDBService = require('./services/mongoDB/mongodb');
+const {
+  getNewsAnalytics,
+  router: newsAnalyticsRouter
+} = require('./routers/news/news-analytics');
 const searchNewsRouter = require('./routers/search-news/search-news');
 const getNewsGraphQL = require('./routers/news/news');
 const xiaoxihomeRouter = require('./routers/xiaoxihome/feedback');
@@ -37,9 +38,11 @@ app.use(helmet());
       next()
     }
 
-    // newsAnalytics(app, newsCollection);
+    // time consuming don't wait
+    getNewsAnalytics(mongoDBService.newsService.collections.news);
 
     getNewsGraphQL('/api/news', app, mongoDBService);
+    app.use('/api/news-analytics', newsServiceMiddleware, newsAnalyticsRouter)
     app.use('/api/search-news', newsServiceMiddleware, searchNewsRouter);
     // app.use('/api/reversegeocoding', reverseGeocodingRouter);
     // app.use('/api/weather', weatherRouter);
