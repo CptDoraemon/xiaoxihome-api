@@ -1,6 +1,6 @@
 const mongoose = require ("mongoose");
 const router = require('express').Router();
-const sendEmailToMyself = require('../../services/send-email-to-myself').sendEmailToMyself;
+const {sendXiaoxihomeFeedbackEmail} = require('../../services/aws/ses');
 
 const Feedback = mongoose.model('Feedback', new mongoose.Schema({
   name: {
@@ -36,7 +36,7 @@ router.post('/feedback', async (req, res) => {
     const feedback = new Feedback({name, email, message, date});
     await feedback.save();
     // don't wait for sending email
-    sendEmailToMyself({name, email, message, date});
+    sendXiaoxihomeFeedbackEmail({name, email, message, date});
 
     return res.json({
       response: 'Thank you for your message, I\'ll get back to you soon.'

@@ -1,12 +1,20 @@
 const mongoose = require('mongoose');
-const NewsService = require('./news');
+const NewsService = require('./news').NewsService;
 
 class MongoDBService {
   db = null;
   newsService = null;
 
-  connect() {
-    return new Promise((resolve, reject) => {
+  async connect() {
+    const isConnected = await this._connect();
+    if (!isConnected) {
+      await new Promise(r => setTimeout(r, 5000));
+      await this.connect();
+    }
+  }
+
+  _connect() {
+    return new Promise((resolve) => {
       mongoose.connect(process.env.MONGODB_URI, {
         useNewUrlParser: true,
         useUnifiedTopology: true,
@@ -18,7 +26,7 @@ class MongoDBService {
       this.db = mongoose.connection;
       this.db.on('error', (err) => {
         console.log('main db mongoose connection error', err);
-        reject(err);
+        resolve(null);
       });
       this.db.once('open', () => {
         console.log('connected to mongoDB')
@@ -33,4 +41,6 @@ class MongoDBService {
   }
 }
 
-module.exports = MongoDBService
+const mongoDBService = new MongoDBService();
+
+module.exports = mongoDBService

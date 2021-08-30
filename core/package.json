@@ -9,7 +9,9 @@
   "author": "Xiaoxi",
   "license": "ISC",
   "dependencies": {
+    "@elastic/elasticsearch": "^7.14.1",
     "@types/mongoose": "^5.11.97",
+    "amqplib": "^0.8.0",
     "aws-sdk": "^2.974.0",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
@@ -19,8 +21,10 @@
     "express-graphql": "^0.12.0",
     "graphql": "^15.5.1",
     "helmet": "^4.6.0",
+    "joi": "^17.4.2",
     "lodash": "^4.17.21",
     "mongodb": "^4.1.0",
-    "mongoose": "^5.13.8"
+    "mongoose": "^5.13.8",
+    "node-schedule": "^2.0.0"
   }
 }

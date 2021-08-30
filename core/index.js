@@ -9,11 +9,12 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-const MongoDBService = require('./services/mongoDB/mongodb');
-const {
-  getNewsAnalytics,
-  router: newsAnalyticsRouter
-} = require('./routers/news/news-analytics');
+const mongoDBService = require('./services/mongoDB/mongodb');
+const elasticsearchService = require('./services/elasticsearch/elasticsearch');
+const scheduleJobs = require('./services/schedule-jobs/scheduler');
+const initMessageQ = require('./services/messageQ/init');
+
+const newsAnalyticsRouter = require('./routers/news/news-analytics');
 const searchNewsRouter = require('./routers/search-news/search-news');
 const getNewsGraphQL = require('./routers/news/news');
 const xiaoxihomeRouter = require('./routers/xiaoxihome/feedback');
@@ -26,29 +27,35 @@ app.use(helmet());
 
 (async () => {
   try {
-    const mongoDBService = new MongoDBService();
     await mongoDBService.connect();
     mongoDBService.finishSetUp();
-    await mongoDBService.newsService.update();
+    await initMessageQ();
+    scheduleJobs();
+
+    app.use((req, res, next) => {
+      req.services = {};
+      next();
+    })
 
     const newsServiceMiddleware = (req, res, next) => {
-      req.services = {
-        newsService: mongoDBService.newsService
-      };
+      req.services.newsService = mongoDBService.newsService;
       next()
     }
 
-    // time consuming don't wait
-    getNewsAnalytics(mongoDBService.newsService.collections.news);
+    const elasticsearchServiceMiddleware = (req, res, next) => {
+      req.services.elasticsearchService = elasticsearchService;
+      next()
+    }
 
-    getNewsGraphQL('/api/news', app, mongoDBService);
-    app.use('/api/news-analytics', newsServiceMiddleware, newsAnalyticsRouter)
-    app.use('/api/search-news', newsServiceMiddleware, searchNewsRouter);
-    // app.use('/api/reversegeocoding', reverseGeocodingRouter);
-    // app.use('/api/weather', weatherRouter);
-    // app.use('/api/xiaoxihome', xiaoxihomeRouter);
-    // app.use('/api/v2ex', v2exRouter);
-    // app.use('/api/web-hooks', webHooks);
+    app.get('/api/ping', (req, res) => res.json({status: 'ok'}));
+    getNewsGraphQL('/api/news', app, elasticsearchService);
+    app.use('/api/news-analytics', elasticsearchServiceMiddleware, newsAnalyticsRouter)
+    app.use('/api/search-news', newsServiceMiddleware, elasticsearchServiceMiddleware, searchNewsRouter);
+    app.use('/api/reversegeocoding', reverseGeocodingRouter);
+    app.use('/api/weather', weatherRouter);
+    app.use('/api/xiaoxihome', xiaoxihomeRouter);
+    app.use('/api/v2ex', v2exRouter);
+    app.use('/api/web-hooks', webHooks);
 
     app.use((err, req, res, next) => {
       console.log(err);
