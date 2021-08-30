@@ -1,0 +1,16 @@
+{
+  "name": "initelasticsearch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Xiaoxi",
+  "license": "ISC",
+  "dependencies": {
+    "@elastic/elasticsearch": "^7.14.1",
+    "dotenv": "^10.0.0",
+    "mongoose": "^5.13.8"
+  }
+}
