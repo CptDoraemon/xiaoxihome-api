@@ -36,6 +36,8 @@ const createIndex = async () => {
           publishedAt: {type: 'date'},
           content: {type: 'text'},
           category: {type: 'keyword'},
+          url: {enabled: false},
+          urlToImage: {enabled: false}
         }
       }
     }
@@ -56,6 +58,8 @@ const saveDocToES = async (doc) => {
         publishedAt: doc.publishedAt,
         content: doc.content,
         category: doc.category,
+        url: doc.url,
+        urlToImage: doc.urlToImage
       },
       refresh: false
     })

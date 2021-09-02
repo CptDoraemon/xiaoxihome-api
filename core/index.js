@@ -10,6 +10,7 @@ app.use(bodyParser.urlencoded({
 app.use(bodyParser.json())
 
 const MongoDBService = require('./services/mongoDB/mongodb');
+const ElasticsearchService = require('./services/elasticsearch/elasticsearch');
 const {
   getNewsAnalytics,
   router: newsAnalyticsRouter
@@ -31,9 +32,18 @@ app.use(helmet());
     mongoDBService.finishSetUp();
     await mongoDBService.newsService.update();
 
+    const elasticsearchService = new ElasticsearchService();
+
     const newsServiceMiddleware = (req, res, next) => {
       req.services = {
         newsService: mongoDBService.newsService
+      };
+      next()
+    }
+
+    const elasticsearchServiceMiddleware = (req, res, next) => {
+      req.services = {
+        elasticsearchService: elasticsearchService
       };
       next()
     }
@@ -43,7 +53,7 @@ app.use(helmet());
 
     getNewsGraphQL('/api/news', app, mongoDBService);
     app.use('/api/news-analytics', newsServiceMiddleware, newsAnalyticsRouter)
-    app.use('/api/search-news', newsServiceMiddleware, searchNewsRouter);
+    app.use('/api/search-news', elasticsearchServiceMiddleware, searchNewsRouter);
     // app.use('/api/reversegeocoding', reverseGeocodingRouter);
     // app.use('/api/weather', weatherRouter);
     // app.use('/api/xiaoxihome', xiaoxihomeRouter);
