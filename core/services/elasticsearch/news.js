@@ -8,9 +8,12 @@ class NewsService {
 		this.elasticsearch = elasticsearch;
 	}
 
-	async searchNews({keyword, startDateUTCString, endDateUTCString, page, itemsPerPage}) {
+	async searchNews({keyword, startDateUTCString, endDateUTCString, page, itemsPerPage, category, sortBy, sortOrder}) {
 		try {
-			const res = await this.elasticsearch.client.search({
+			const sortByRelevance = {"_score": sortOrder};
+			const sortByDate = {"publishedAt": sortOrder};
+
+			const promise = this.elasticsearch.client.search({
 				index: this.indexName,
 				from: (page - 1) * itemsPerPage,
 				size: itemsPerPage,
@@ -38,12 +41,15 @@ class NewsService {
 											"lte": endDateUTCString
 										}
 									}
-								}
+								},
+								...category !== 'all' ? [{"term":  { "category": category }}] : []
 							]
 						}
-					}
+					},
+					"sort": sortBy === 'relevance' ? [sortByRelevance, sortByDate] : [sortByDate, sortByRelevance]
 				}
 			})
+			const res = await promise;
 			return {
 				docs: res.body.hits.hits.map(obj => {
 					const doc = cloneDeep(obj._source);

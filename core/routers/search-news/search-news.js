@@ -7,13 +7,27 @@ const corsOptions = {
 };
 const Joi = require('joi');
 
+const NewsCategory = {
+	HEADLINE: `headline`,
+	BUSINESS: `business`,
+	ENTERTAINMENT: `entertainment`,
+	HEALTH: `health`,
+	SCIENCE: `science`,
+	SPORTS: `sports`,
+	TECHNOLOGY: `technology`
+}
+const newsCategories = Object.values(NewsCategory);
+
 const schema = Joi.object({
 	keyword: Joi.string()
 		.min(1)
 		.max(200),
 	startDate: Joi.date().less(Joi.ref('endDate')),
 	endDate: Joi.date(),
-	page: Joi.number().integer().min(1)
+	category: Joi.string().default('all').allow('all', ...newsCategories),
+	sortOrder: Joi.string().default('desc').allow('desc', 'asc'),
+	sortBy: Joi.string().default('relevance').allow('relevance', 'date'),
+	page: Joi.number().integer().min(1).default(1)
 })
 
 class DateParsingError extends Error {}
@@ -44,27 +58,42 @@ const getNextDay = (UTCString) => {
 
 router.get('/', cors(corsOptions), async (req, res) => {
 	try {
-		const keyword = req.query.keyword;
 		const startDate = await parseDate(req.query.startDate, new Date(Date.UTC(2020, 0, 1)));
 		const endDateExclusive = await parseDate(req.query.endDate, new Date());
 		const endDate = getNextDay(endDateExclusive);
-		const page = isNaN(parseInt(req.query.page)) ? 1 : parseInt(req.query.page);
+		const {
+			keyword,
+			category,
+			sortBy,
+			sortOrder,
+			page
+		} = req.query;
 		const itemsPerPage = 20;
 
 		const validationResult = schema.validate({
 			keyword,
 			startDate,
-			endDate
+			endDate,
+			category,
+			sortBy,
+			sortOrder,
+			page
 		})
 		if (validationResult.error) {
 			throw new ValidationError(validationResult.error.details[0].message)
 		}
-		console.log(keyword, startDate, endDate);
-		const docs = await req.services.elasticsearchService.newsService.searchNews({
-			keyword,
-			startDateUTCString: startDate,
-			endDateUTCString: endDate,
-			page,
+		console.log(validationResult.value);
+		const {
+			docs,
+			total
+		} = await req.services.elasticsearchService.newsService.searchNews({
+			keyword: validationResult.value.keyword,
+			startDateUTCString: validationResult.value.startDate,
+			endDateUTCString: validationResult.value.endDate,
+			page: validationResult.value.page,
+			category: validationResult.value.category,
+			sortBy: validationResult.value.sortBy,
+			sortOrder: validationResult.value.sortOrder,
 			itemsPerPage
 		});
 		if (!docs) {
@@ -72,8 +101,9 @@ router.get('/', cors(corsOptions), async (req, res) => {
 		}
 		res.json({
 			status: 'ok',
-			data: docs,
-			hasNext: docs.length !== itemsPerPage
+			docs,
+			total,
+			hasNext: docs.length === itemsPerPage
 		})
 	} catch (e) {
 		let errorMessage = 'Server Error';
