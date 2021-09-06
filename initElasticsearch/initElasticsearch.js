@@ -1,24 +1,18 @@
 require('dotenv').config();
-const mongoose = require('mongoose');
-const { Client } = require('@elastic/elasticsearch')
-const client = new Client({
-  node: 'http://localhost:9200',
-  auth: {
-    username: process.env.ELASTICSEARCH_USERNAME,
-    password: process.env.ELASTICSEARCH_PASSWORD,
-  }
-});
-const INDEX_NAME = 'news';
+const {
+  client,
+  connectToMongo
+} = require('./connect');
+const deleteIndicesIfExists = require('./reset')
 
-const createIndex = async () => {
-  try {
-    await client.indices.delete({index: INDEX_NAME})
-  } catch (e) {
-    console.log(`Didn't delete index`)
-  }
+const Indices = {
+  'NEWS': 'news',
+  'SEARCHED_KEYWORDS': 'searched-keywords'
+}
 
+const createNewsIndex = async () => {
   await client.indices.create({
-    index: INDEX_NAME,
+    index: Indices.NEWS,
     body: {
       mappings: {
         properties: {
@@ -36,39 +30,31 @@ const createIndex = async () => {
           publishedAt: {type: 'date'},
           content: {type: 'text'},
           category: {type: 'keyword'},
-          url: {enabled: false},
-          urlToImage: {enabled: false}
+          url: {type: 'keyword', index: false},
+          urlToImage: {type: 'keyword', index: false}
         }
       }
     }
   });
-  console.log('news index created with mapping');
+  console.log(`${Indices.NEWS} index created with mapping`);
 }
 
-const saveDocToES = async (doc) => {
-  try {
-    await client.index({
-      index: INDEX_NAME,
-      id: `${doc._id}`,
-      body: {
-        source: doc.source.name,
-        author: doc.author,
-        title: doc.title,
-        description: doc.description,
-        publishedAt: doc.publishedAt,
-        content: doc.content,
-        category: doc.category,
-        url: doc.url,
-        urlToImage: doc.urlToImage
-      },
-      refresh: false
-    })
-    return true
-  } catch (e) {
-    console.log(e)
-    console.log('failed save: ', doc._id);
-    return false
-  }
+const createSearchedKeywordIndex = async () => {
+  await client.indices.create({
+    index: Indices.SEARCHED_KEYWORDS,
+    body: {
+      mappings: {
+        properties: {
+          timestamp: {type: 'date'},
+          keyword: {
+            type: 'keyword',
+            normalizer: "lowercase"
+          }
+        }
+      }
+    }
+  });
+  console.log(`${Indices.SEARCHED_KEYWORDS} index created with mapping`);
 }
 
 const bulkSave = async (array) => {
@@ -76,7 +62,7 @@ const bulkSave = async (array) => {
     const body = array.flatMap(doc => [
       {
         index: {
-          _index: INDEX_NAME,
+          _index: Indices.NEWS,
           _id: `${doc._id}`
         }
       },
@@ -104,28 +90,6 @@ const bulkSave = async (array) => {
   }
 }
 
-const connectToMongo = () => {
-  return new Promise((resolve, reject) => {
-    mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      "auth": { "authSource": "admin" },
-      "user": process.env.MONGODB_USER,
-      "pass": process.env.MONGODB_PASS,
-    })
-
-    const db = mongoose.connection;
-    db.on('error', (err) => {
-      console.log('main db mongoose connection error', err);
-      reject(err);
-    });
-    db.once('open', () => {
-      console.log('connected to mongoDB')
-      resolve(db);
-    })
-  })
-}
-
 (async () => {
   let saved = 0;
   let failedID = [];
@@ -133,33 +97,21 @@ const connectToMongo = () => {
   const startedAt = Date.now();
 
   try {
-    await createIndex();
     const mongo = await connectToMongo();
+    await deleteIndicesIfExists(client, Object.values(Indices))
     const cursor = await mongo.collection('news').find().sort({"_id":1});
+
+    // create indices
+    await createNewsIndex();
+    await createSearchedKeywordIndex();
 
     // disable index refresh
     await client.indices.put_settings({
-      index: INDEX_NAME,
+      index: Indices.NEWS,
       body: {
         refresh_interval: -1
       }
     })
-
-    // save one by one
-    // const handleOne = async () => {
-    //   const doc = await cursor.next();
-    //   const isSaved = await saveDocToES(doc);
-    //   isSaved ? saved++ : failedID.push(`${doc._id}`);
-    //   if (saved % 1000 === 0) {
-    //     console.log('saved: ', saved)
-    //   }
-    //   const hasNext = await cursor.hasNext();
-    //   if (hasNext) {
-    //     await handleOne()
-    //   }
-    //   return true
-    // }
-    // await handleOne();
 
     // save bulk
     const handleOne = async () => {
@@ -181,12 +133,12 @@ const connectToMongo = () => {
 
     // refresh after all saved
     await client.indices.refresh({
-      index: INDEX_NAME
+      index: Indices.NEWS,
     });
 
     // restore normal refresh interval
     await client.indices.put_settings({
-      index: INDEX_NAME,
+      index: Indices.NEWS,
       body: {
         refresh_interval: '1s'
       }

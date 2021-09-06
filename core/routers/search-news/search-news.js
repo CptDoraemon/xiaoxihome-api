@@ -7,6 +7,8 @@ const corsOptions = {
 };
 const Joi = require('joi');
 
+router.use(cors(corsOptions));
+
 const NewsCategory = {
 	HEADLINE: `headline`,
 	BUSINESS: `business`,
@@ -56,7 +58,7 @@ const getNextDay = (UTCString) => {
 	return baseDate.toISOString();
 }
 
-router.get('/', cors(corsOptions), async (req, res) => {
+router.get('/', async (req, res) => {
 	try {
 		const startDate = await parseDate(req.query.startDate, new Date(Date.UTC(2020, 0, 1)));
 		const endDateExclusive = await parseDate(req.query.endDate, new Date());
@@ -82,7 +84,6 @@ router.get('/', cors(corsOptions), async (req, res) => {
 		if (validationResult.error) {
 			throw new ValidationError(validationResult.error.details[0].message)
 		}
-		console.log(validationResult.value);
 		const {
 			docs,
 			total
@@ -99,7 +100,11 @@ router.get('/', cors(corsOptions), async (req, res) => {
 		if (!docs) {
 			throw new Error()
 		}
-		res.json({
+
+		// save searched keyword, do not wait
+		req.services.elasticsearchService.newsService.saveSearchedKeyword(validationResult.value.keyword);
+
+		return res.json({
 			status: 'ok',
 			docs,
 			total,
@@ -116,6 +121,24 @@ router.get('/', cors(corsOptions), async (req, res) => {
 		res.json({
 			status: 'error',
 			message: errorMessage
+		})
+	}
+});
+
+router.get('/trending', async (req, res) => {
+	try {
+		const lastWeek = await req.services.elasticsearchService.newsService.getTrendingSearchedKeywords('LAST_WEEK');
+		const allTime = await req.services.elasticsearchService.newsService.getTrendingSearchedKeywords('ALL_TIME');
+
+		return res.json({
+			status: 'ok',
+			lastWeek,
+			allTime
+		})
+	} catch (e) {
+		res.json({
+			status: 'error',
+			message: 'Server Error'
 		})
 	}
 })

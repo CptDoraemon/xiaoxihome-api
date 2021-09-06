@@ -1,7 +1,10 @@
 const cloneDeep = require('lodash/cloneDeep');
 
 class NewsService {
-	indexName = 'news';
+	indices = {
+		'NEWS': 'news',
+		'SEARCHED_KEYWORDS': 'searched-keywords'
+	};
 	elasticsearch;
 
 	constructor(elasticsearch) {
@@ -14,7 +17,7 @@ class NewsService {
 			const sortByDate = {"publishedAt": sortOrder};
 
 			const promise = this.elasticsearch.client.search({
-				index: this.indexName,
+				index: this.indices.NEWS,
 				from: (page - 1) * itemsPerPage,
 				size: itemsPerPage,
 				body: {
@@ -60,6 +63,59 @@ class NewsService {
 			};
 		} catch (e) {
 			console.log(e);
+			return null
+		}
+	}
+
+	async saveSearchedKeyword(keyword) {
+		try {
+			await this.elasticsearch.client.index({
+				index: this.indices.SEARCHED_KEYWORDS,
+				body: {
+					keyword,
+					timestamp: Date.now()
+				}
+			})
+		} catch (e) {
+			console.log('saveSearchedKeyword', e)
+		}
+	}
+
+	/**
+	 * @param {'ALL_TIME' | 'LAST_WEEK'} range
+	 */
+	async getTrendingSearchedKeywords(range) {
+		try {
+			const query = this.elasticsearch.client.search({
+				index: this.indices.SEARCHED_KEYWORDS,
+				body: {
+					"size": 0,
+					...range === 'LAST_WEEK' ? {
+						"query": {
+							"range": {
+								"timestamp": {
+									"gte": "now-1w/d",
+									"lte": "now/d"
+								}
+							}
+						},
+					} : {},
+					"aggs": {
+						"count": {
+							"terms": {
+								"field": "keyword",
+								"size": 5,
+								"order": {"_count": "desc"}
+							}
+						}
+					}
+				}
+			})
+			const data = await query;
+			console.log(data)
+			return data.body.aggregations.count.buckets;
+		} catch (e) {
+			console.log('getAllTimeTrendingSearchedKeywords', e);
 			return null
 		}
 	}
