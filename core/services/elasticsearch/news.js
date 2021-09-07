@@ -49,7 +49,17 @@ class NewsService {
 							]
 						}
 					},
-					"sort": sortBy === 'relevance' ? [sortByRelevance, sortByDate] : [sortByDate, sortByRelevance]
+					"sort": sortBy === 'relevance' ? [sortByRelevance, sortByDate] : [sortByDate, sortByRelevance],
+					"aggs": {
+						"histogram": {
+							"auto_date_histogram": {
+								"field": "publishedAt",
+								"buckets": 100,
+								"format": "yyyy-MM-dd",
+								"minimum_interval": "day"
+							}
+						}
+					}
 				}
 			})
 			const res = await promise;
@@ -59,6 +69,7 @@ class NewsService {
 					doc.id = obj._id;
 					return doc
 				}),
+				histogram: res.body.aggregations.histogram.buckets,
 				total: res.body.hits.total.value
 			};
 		} catch (e) {
@@ -112,7 +123,6 @@ class NewsService {
 				}
 			})
 			const data = await query;
-			console.log(data)
 			return data.body.aggregations.count.buckets;
 		} catch (e) {
 			console.log('getAllTimeTrendingSearchedKeywords', e);

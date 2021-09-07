@@ -43,12 +43,14 @@ const createSearchedKeywordIndex = async () => {
   await client.indices.create({
     index: Indices.SEARCHED_KEYWORDS,
     body: {
-      mappings: {
-        properties: {
-          timestamp: {type: 'date'},
-          keyword: {
-            type: 'keyword',
-            normalizer: "lowercase"
+      "mappings": {
+        "properties": {
+          "timestamp": {
+            "type": "date"
+          },
+          "keyword": {
+            "type": "keyword",
+            "normalizer": "lowercase"
           }
         }
       }

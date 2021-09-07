@@ -86,7 +86,8 @@ router.get('/', async (req, res) => {
 		}
 		const {
 			docs,
-			total
+			total,
+			histogram
 		} = await req.services.elasticsearchService.newsService.searchNews({
 			keyword: validationResult.value.keyword,
 			startDateUTCString: validationResult.value.startDate,
@@ -107,6 +108,7 @@ router.get('/', async (req, res) => {
 		return res.json({
 			status: 'ok',
 			docs,
+			histogram,
 			total,
 			hasNext: docs.length === itemsPerPage
 		})
