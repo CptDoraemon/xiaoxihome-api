@@ -64,11 +64,11 @@ const bulkSave = async (array) => {
     const body = array.flatMap(doc => [
       {
         index: {
-          _index: Indices.NEWS,
-          _id: `${doc._id}`
+          _index: Indices.NEWS
         }
       },
       {
+        mongoId: doc._id,
         source: doc.source.name,
         author: doc.author,
         title: doc.title,

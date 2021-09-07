@@ -66,7 +66,8 @@ class NewsService {
 			return {
 				docs: res.body.hits.hits.map(obj => {
 					const doc = cloneDeep(obj._source);
-					doc.id = obj._id;
+					doc.id = doc.mongoId;
+					delete doc.mongoId;
 					return doc
 				}),
 				histogram: res.body.aggregations.histogram.buckets,
