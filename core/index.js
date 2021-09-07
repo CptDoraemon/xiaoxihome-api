@@ -34,17 +34,18 @@ app.use(helmet());
 
     const elasticsearchService = new ElasticsearchService();
 
+    app.use((req, res, next) => {
+      req.services = {};
+      next();
+    })
+
     const newsServiceMiddleware = (req, res, next) => {
-      req.services = {
-        newsService: mongoDBService.newsService
-      };
+      req.services.newsService = mongoDBService.newsService;
       next()
     }
 
     const elasticsearchServiceMiddleware = (req, res, next) => {
-      req.services = {
-        elasticsearchService: elasticsearchService
-      };
+      req.services.elasticsearchService = elasticsearchService;
       next()
     }
 
@@ -53,7 +54,7 @@ app.use(helmet());
 
     getNewsGraphQL('/api/news', app, mongoDBService);
     app.use('/api/news-analytics', newsServiceMiddleware, newsAnalyticsRouter)
-    app.use('/api/search-news', elasticsearchServiceMiddleware, searchNewsRouter);
+    app.use('/api/search-news', newsServiceMiddleware, elasticsearchServiceMiddleware, searchNewsRouter);
     // app.use('/api/reversegeocoding', reverseGeocodingRouter);
     // app.use('/api/weather', weatherRouter);
     // app.use('/api/xiaoxihome', xiaoxihomeRouter);

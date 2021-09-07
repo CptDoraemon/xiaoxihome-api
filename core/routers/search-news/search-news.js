@@ -143,6 +143,30 @@ router.get('/trending', async (req, res) => {
 			message: 'Server Error'
 		})
 	}
+});
+
+router.get('/id', async (req, res) => {
+	try {
+		const {id} = req.query;
+		if (!id || !id.length || id.length > 200) {
+			res.json({
+				status: 'error',
+				message: 'wrong id'
+			})
+		}
+
+		const doc = await req.services.newsService.getDocById(id);
+
+		return res.json({
+			status: 'ok',
+			doc
+		})
+	} catch (e) {
+		res.json({
+			status: 'error',
+			message: 'Server Error'
+		})
+	}
 })
 
 module.exports = router

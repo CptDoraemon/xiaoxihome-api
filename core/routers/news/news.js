@@ -16,6 +16,7 @@ const {
 const ArticleType = new GraphQLObjectType({
   name: 'article',
   fields: () => ({
+    id: { type: GraphQLString },
     source: { type: GraphQLString },
     author: { type: GraphQLString },
     title: { type: GraphQLString },
@@ -53,6 +54,7 @@ function getNewsGraphQL(path, app, mongoDBService) {
         resolve: (source, {category}) => {
           const data = mongoDBService.newsService.getNewsInCategory(category);
           return data.map(_ => ({
+            id: _._id,
             source: _.source.name,
             author: _.author,
             title:  _.title,

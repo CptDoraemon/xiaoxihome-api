@@ -46,6 +46,15 @@ class NewsService {
     }
   }
 
+  async getDocById(id) {
+    try {
+      return await this.collections.news.findOne({_id: id});
+    } catch (e) {
+      console.log('getDocById', e);
+      return null
+    }
+  }
+
   async getLastUpdated() {
     try {
       this.latestNews = await this.collections.lastUpdatedNews.findOne({}, {projection: {_id: 0}});
