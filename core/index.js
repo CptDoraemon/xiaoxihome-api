@@ -52,7 +52,7 @@ app.use(helmet());
     // time consuming don't wait
     getNewsAnalytics(mongoDBService.newsService.collections.news);
 
-    getNewsGraphQL('/api/news', app, mongoDBService);
+    getNewsGraphQL('/api/news', app, elasticsearchService);
     app.use('/api/news-analytics', newsServiceMiddleware, newsAnalyticsRouter)
     app.use('/api/search-news', newsServiceMiddleware, elasticsearchServiceMiddleware, searchNewsRouter);
     // app.use('/api/reversegeocoding', reverseGeocodingRouter);

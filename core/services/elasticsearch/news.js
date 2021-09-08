@@ -1,5 +1,19 @@
 const cloneDeep = require('lodash/cloneDeep');
 
+const getOutNewsDoc = (doc) => {
+	return {
+		id: doc.mongoId,
+		source: doc.source,
+		author: doc.author,
+		title:  doc.title,
+		description:  doc.description,
+		url:  doc.url,
+		urlToImage:  doc.urlToImage,
+		publishedAt:  doc.publishedAt,
+		content:  doc.content,
+	}
+}
+
 class NewsService {
 	indices = {
 		'NEWS': 'news',
@@ -65,10 +79,7 @@ class NewsService {
 			const res = await promise;
 			return {
 				docs: res.body.hits.hits.map(obj => {
-					const doc = cloneDeep(obj._source);
-					doc.id = doc.mongoId;
-					delete doc.mongoId;
-					return doc
+					return getOutNewsDoc(obj._source)
 				}),
 				histogram: res.body.aggregations.histogram.buckets,
 				total: res.body.hits.total.value
@@ -127,6 +138,57 @@ class NewsService {
 			return data.body.aggregations.count.buckets;
 		} catch (e) {
 			console.log('getAllTimeTrendingSearchedKeywords', e);
+			return null
+		}
+	}
+
+	async getLatestNewsInCategory(category) {
+		try {
+			const promise = this.elasticsearch.client.search({
+				index: this.indices.NEWS,
+				size: 50,
+				body: {
+					"query": {
+						"bool": {
+							"filter": [
+								{"term":
+									{ "category": category }
+								}
+							]
+						}
+					},
+					"sort": [{"publishedAt": 'desc'}]
+				}
+			})
+			const res = await promise;
+			return res.body.hits.hits.map(obj => {
+				return getOutNewsDoc(obj._source)
+			})
+		} catch (e) {
+			console.log('getLatestNewsInCategory', e)
+			return null
+		}
+	}
+
+	async getNewsById(id) {
+		try {
+			const promise = this.elasticsearch.client.search({
+				index: this.indices.NEWS,
+				size: 1,
+				body: {
+					"query": {
+						"term": {
+							"mongoId": id
+						}
+					}
+				}
+			})
+			const res = await promise;
+			return res.body.hits.hits.map(obj => {
+				return getOutNewsDoc(obj._source)
+			})
+		} catch (e) {
+			console.log('getLatestNewsInCategory', e)
 			return null
 		}
 	}

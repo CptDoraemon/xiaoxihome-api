@@ -155,7 +155,7 @@ router.get('/id', async (req, res) => {
 			})
 		}
 
-		const doc = await req.services.newsService.getDocById(id);
+		const doc = await req.services.elasticsearchService.newsService.getNewsById(id);
 
 		return res.json({
 			status: 'ok',

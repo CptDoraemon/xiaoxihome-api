@@ -42,7 +42,7 @@ const ArticleCategoryType = new GraphQLEnumType({
 });
 
 
-function getNewsGraphQL(path, app, mongoDBService) {
+function getNewsGraphQL(path, app, elasticsearchService) {
   const QueryType = new GraphQLObjectType({
     name: 'RootQueryType',
     fields: {
@@ -52,18 +52,7 @@ function getNewsGraphQL(path, app, mongoDBService) {
           category: { type: ArticleCategoryType }
         },
         resolve: (source, {category}) => {
-          const data = mongoDBService.newsService.getNewsInCategory(category);
-          return data.map(_ => ({
-            id: _._id,
-            source: _.source.name,
-            author: _.author,
-            title:  _.title,
-            description:  _.description,
-            url:  _.url,
-            urlToImage:  _.urlToImage,
-            publishedAt:  _.publishedAt,
-            content:  _.content,
-          }))
+          return elasticsearchService.newsService.getLatestNewsInCategory(category);
         }
       }
     }
