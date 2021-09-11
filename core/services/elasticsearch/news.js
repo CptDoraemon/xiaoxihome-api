@@ -1,4 +1,4 @@
-const cloneDeep = require('lodash/cloneDeep');
+const newsAnalytics = require('./news-analytics');
 
 const getOutNewsDoc = (doc) => {
 	return {
@@ -19,18 +19,22 @@ class NewsService {
 		'NEWS': 'news',
 		'SEARCHED_KEYWORDS': 'searched-keywords'
 	};
-	elasticsearch;
+	client;
+	newsAnalytics;
 
-	constructor(elasticsearch) {
-		this.elasticsearch = elasticsearch;
+	constructor(client) {
+		this.client = client;
+		this.newsAnalytics = new newsAnalytics(this.indices, this.client);
 	}
 
 	async searchNews({keyword, startDateUTCString, endDateUTCString, page, itemsPerPage, category, sortBy, sortOrder}) {
 		try {
 			const sortByRelevance = {"_score": sortOrder};
 			const sortByDate = {"publishedAt": sortOrder};
+			console.log('start ', startDateUTCString);
+			console.log('end ', endDateUTCString);
 
-			const promise = this.elasticsearch.client.search({
+			const res = await this.client.search({
 				index: this.indices.NEWS,
 				from: (page - 1) * itemsPerPage,
 				size: itemsPerPage,
@@ -54,8 +58,9 @@ class NewsService {
 								{
 									"range": {
 										"publishedAt": {
-											"gte": startDateUTCString,
-											"lte": endDateUTCString
+											"gte": `${startDateUTCString}||/d`,
+											"lte": `${endDateUTCString}||/d`,
+											"format": "strict_date_optional_time"
 										}
 									}
 								},
@@ -76,7 +81,6 @@ class NewsService {
 					}
 				}
 			})
-			const res = await promise;
 			return {
 				docs: res.body.hits.hits.map(obj => {
 					return getOutNewsDoc(obj._source)
@@ -92,7 +96,7 @@ class NewsService {
 
 	async saveSearchedKeyword(keyword) {
 		try {
-			await this.elasticsearch.client.index({
+			await this.client.index({
 				index: this.indices.SEARCHED_KEYWORDS,
 				body: {
 					keyword,
@@ -109,7 +113,7 @@ class NewsService {
 	 */
 	async getTrendingSearchedKeywords(range) {
 		try {
-			const query = this.elasticsearch.client.search({
+			const res = await this.client.search({
 				index: this.indices.SEARCHED_KEYWORDS,
 				body: {
 					"size": 0,
@@ -134,8 +138,7 @@ class NewsService {
 					}
 				}
 			})
-			const data = await query;
-			return data.body.aggregations.count.buckets;
+			return res.body.aggregations.count.buckets;
 		} catch (e) {
 			console.log('getAllTimeTrendingSearchedKeywords', e);
 			return null
@@ -144,7 +147,7 @@ class NewsService {
 
 	async getLatestNewsInCategory(category) {
 		try {
-			const promise = this.elasticsearch.client.search({
+			const res = await this.client.search({
 				index: this.indices.NEWS,
 				size: 50,
 				body: {
@@ -160,7 +163,6 @@ class NewsService {
 					"sort": [{"publishedAt": 'desc'}]
 				}
 			})
-			const res = await promise;
 			return res.body.hits.hits.map(obj => {
 				return getOutNewsDoc(obj._source)
 			})
@@ -172,7 +174,7 @@ class NewsService {
 
 	async getNewsById(id) {
 		try {
-			const promise = this.elasticsearch.client.search({
+			const res = await this.client.search({
 				index: this.indices.NEWS,
 				size: 1,
 				body: {
@@ -183,7 +185,6 @@ class NewsService {
 					}
 				}
 			})
-			const res = await promise;
 			return res.body.hits.hits.map(obj => {
 				return getOutNewsDoc(obj._source)
 			})

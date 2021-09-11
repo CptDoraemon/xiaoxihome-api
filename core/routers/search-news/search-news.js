@@ -24,7 +24,7 @@ const schema = Joi.object({
 	keyword: Joi.string()
 		.min(1)
 		.max(200),
-	startDate: Joi.date().less(Joi.ref('endDate')),
+	startDate: Joi.date().max(Joi.ref('endDate')),
 	endDate: Joi.date(),
 	category: Joi.string().default('all').allow('all', ...newsCategories),
 	sortOrder: Joi.string().default('desc').allow('desc', 'asc'),
@@ -50,19 +50,10 @@ const parseDate = (string, defaultValue) => {
 	}
 }
 
-const getNextDay = (UTCString) => {
-	const ms = new Date(UTCString).valueOf();
-	const nextDayMs = ms + 1000 * 60 * 60 * 24;
-	const date = new Date(nextDayMs);
-	const baseDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-	return baseDate.toISOString();
-}
-
 router.get('/', async (req, res) => {
 	try {
 		const startDate = await parseDate(req.query.startDate, new Date(Date.UTC(2020, 0, 1)));
-		const endDateExclusive = await parseDate(req.query.endDate, new Date());
-		const endDate = getNextDay(endDateExclusive);
+		const endDate = await parseDate(req.query.endDate, new Date());
 		const {
 			keyword,
 			category,
@@ -90,8 +81,8 @@ router.get('/', async (req, res) => {
 			histogram
 		} = await req.services.elasticsearchService.newsService.searchNews({
 			keyword: validationResult.value.keyword,
-			startDateUTCString: validationResult.value.startDate,
-			endDateUTCString: validationResult.value.endDate,
+			startDateUTCString: startDate,
+			endDateUTCString: endDate,
 			page: validationResult.value.page,
 			category: validationResult.value.category,
 			sortBy: validationResult.value.sortBy,

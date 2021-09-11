@@ -14,7 +14,7 @@ class Elasticsearch {
 			}
 		});
 
-		this.newsService = new NewsService(this);
+		this.newsService = new NewsService(this.client);
 	}
 }
 
