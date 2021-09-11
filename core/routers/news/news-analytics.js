@@ -1,4 +1,3 @@
-const getSummaryStatistics = require('./analytics/summary-statistics').getSummaryStatistics;
 const router = require('express').Router();
 const cors = require('cors');
 const corsOptions = {
@@ -7,40 +6,34 @@ const corsOptions = {
   methods: 'POST'
 };
 
-router.get('/', cors(corsOptions), async (req, res) => {
+router.use(cors(corsOptions));
+
+router.get('/', async (req, res) => {
   try {
-    const newsCollection = req.services.newsService.collections.news;
-    const newsAnalytics = await getNewsAnalytics(newsCollection);
-    res.json(Object.assign(
-        {},
-        {
-          status: 'ok'
-        },
-        newsAnalytics
-    ))
+    const analyticsService = req.services.elasticsearchService.newsService.newsAnalytics;
+    const data = await Promise.all([
+      analyticsService.getSummary(),
+      analyticsService.getCountByCategory()
+    ])
+
+    if (data.filter(obj => obj === null).length > 0) {
+      throw new Error()
+    }
+
+    return res.json({
+      status: 'ok',
+      data: {
+        summary: data[0],
+        countByCategory: data[1]
+      }
+    });
+
   } catch (e) {
-    await res.json({
+    return res.json({
       status: 'error',
       message: 'server error'
     });
-    throw (e)
   }
 });
 
-// getNewsAnalytics is time consuming
-// exec it when server starts and cache the result
-async function getNewsAnalytics(newsCollection) {
-  try {
-    const summaryStatistics = await getSummaryStatistics(newsCollection);
-    return {
-      summaryStatistics
-    }
-  } catch (e) {
-    throw (e)
-  }
-}
-
-module.exports = {
-  router,
-  getNewsAnalytics
-};
+module.exports = router;

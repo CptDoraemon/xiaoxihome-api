@@ -11,10 +11,7 @@ app.use(bodyParser.json())
 
 const MongoDBService = require('./services/mongoDB/mongodb');
 const ElasticsearchService = require('./services/elasticsearch/elasticsearch');
-const {
-  getNewsAnalytics,
-  router: newsAnalyticsRouter
-} = require('./routers/news/news-analytics');
+const newsAnalyticsRouter = require('./routers/news/news-analytics');
 const searchNewsRouter = require('./routers/search-news/search-news');
 const getNewsGraphQL = require('./routers/news/news');
 const xiaoxihomeRouter = require('./routers/xiaoxihome/feedback');
@@ -49,11 +46,8 @@ app.use(helmet());
       next()
     }
 
-    // time consuming don't wait
-    getNewsAnalytics(mongoDBService.newsService.collections.news);
-
     getNewsGraphQL('/api/news', app, elasticsearchService);
-    app.use('/api/news-analytics', newsServiceMiddleware, newsAnalyticsRouter)
+    app.use('/api/news-analytics', elasticsearchServiceMiddleware, newsAnalyticsRouter)
     app.use('/api/search-news', newsServiceMiddleware, elasticsearchServiceMiddleware, searchNewsRouter);
     // app.use('/api/reversegeocoding', reverseGeocodingRouter);
     // app.use('/api/weather', weatherRouter);
