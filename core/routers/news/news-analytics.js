@@ -13,7 +13,8 @@ router.get('/', async (req, res) => {
     const analyticsService = req.services.elasticsearchService.newsService.newsAnalytics;
     const data = await Promise.all([
       analyticsService.getSummary(),
-      analyticsService.getCountByCategory()
+      analyticsService.getCountByCategory(),
+      analyticsService.getDocCountByDayAndCategory(),
     ])
 
     if (data.filter(obj => obj === null).length > 0) {
@@ -24,7 +25,8 @@ router.get('/', async (req, res) => {
       status: 'ok',
       data: {
         summary: data[0],
-        countByCategory: data[1]
+        countByCategory: data[1],
+        docCountByDayAndCategory: data[2]
       }
     });
 

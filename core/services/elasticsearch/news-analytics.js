@@ -76,6 +76,70 @@ class NewsAnalytics {
       return null
     }
   }
+
+  async getWordFrequency() {
+
+  }
+
+  async getDocCountByDayAndCategory() {
+    try {
+      const categories = ["headline", "business", "entertainment", "health", "science", "sports", "technology"];
+      const res = await this.client.search({
+        index: this.indices.NEWS,
+        body: {
+          "size": 0,
+          "query": {
+            "range": {
+              "publishedAt": {
+                "gte": "2020-01-04||/d"
+              }
+            }
+          },
+          "aggs": {
+            "docCountByDay": {
+              "date_histogram": {
+                "field": "publishedAt",
+                "calendar_interval": "1d"
+              },
+              "aggs": {
+                "byCategory": {
+                  "terms": {
+                    "field": "category"
+                  }
+                }
+              }
+            }
+          }
+        }
+      });
+
+      const docCountByDay = [];
+      const docCountByDayAndCategory = [];
+      const date = [];
+      res.body.aggregations.docCountByDay.buckets.forEach(obj => {
+        date.push(obj.key);
+        docCountByDay.push(obj.doc_count);
+        const _docCountByDayAndCategory = new Array(categories.length).fill(0);
+        obj.byCategory.buckets.forEach(obj => {
+          const index = categories.indexOf(obj.key);
+          if (_docCountByDayAndCategory[index] === 0) {
+            _docCountByDayAndCategory[index] = obj.doc_count
+          }
+        });
+        docCountByDayAndCategory.push(_docCountByDayAndCategory);
+      })
+
+      return {
+        docCountByDay,
+        docCountByDayAndCategory,
+        date,
+        categories
+      }
+    } catch (e) {
+      console.log('getDocCountByDay', e);
+      return null
+    }
+  }
 }
 
 module.exports = NewsAnalytics

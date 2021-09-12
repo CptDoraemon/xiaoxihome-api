@@ -16,7 +16,9 @@ const createNewsIndex = async () => {
     body: {
       mappings: {
         properties: {
-          source: {
+          source: {type: 'text'},
+          author: {type: 'text'},
+          title: {
             type: 'text',
             fields : {
               keyword : {
@@ -24,8 +26,6 @@ const createNewsIndex = async () => {
               }
             }
           },
-          author: {type: 'text'},
-          title: {type: 'text'},
           description: {type: 'text'},
           publishedAt: {type: 'date'},
           content: {type: 'text'},
@@ -145,6 +145,11 @@ const bulkSave = async (array) => {
         refresh_interval: '1s'
       }
     })
+
+    // flush
+    await client.indices.flush({
+      index: Indices.NEWS,
+    });
 
     return true
   } catch (e) {
