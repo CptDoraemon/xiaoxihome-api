@@ -18,15 +18,8 @@ const createNewsIndex = async () => {
         properties: {
           source: {type: 'text'},
           author: {type: 'text'},
-          title: {
-            type: 'text',
-            fields : {
-              keyword : {
-                type : "keyword",
-              }
-            }
-          },
-          description: {type: 'text'},
+          title: {type: 'text'},
+          description: {type: 'text', fielddata: true},
           publishedAt: {type: 'date'},
           content: {type: 'text'},
           category: {type: 'keyword'},

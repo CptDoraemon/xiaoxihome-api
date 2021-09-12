@@ -1,3 +1,7 @@
+const {
+  blacklist: wordCloudBlacklist
+} = require('./word-cloud-dictionary')
+
 class NewsAnalytics {
   indices;
   client;
@@ -77,10 +81,6 @@ class NewsAnalytics {
     }
   }
 
-  async getWordFrequency() {
-
-  }
-
   async getDocCountByDayAndCategory() {
     try {
       const categories = ["headline", "business", "entertainment", "health", "science", "sports", "technology"];
@@ -136,7 +136,34 @@ class NewsAnalytics {
         categories
       }
     } catch (e) {
-      console.log('getDocCountByDay', e);
+      console.log('getDocCountByDayAndCategory', e);
+      return null
+    }
+  }
+
+  async getWordFrequency() {
+    try {
+      const res = await this.client.search({
+        index: this.indices.NEWS,
+        body: {
+          "size": 0,
+          "aggs": {
+            "wordFrequency": {
+              "terms": {
+                "field": "description",
+                "size": 50,
+                "exclude": wordCloudBlacklist
+              }
+            }
+          }
+        }
+      });
+      return res.body.aggregations.wordFrequency.buckets.map(obj => ({
+        word: obj.key,
+        count: obj.doc_count
+      }));
+    } catch (e) {
+      console.log('getWordFrequency', e);
       return null
     }
   }

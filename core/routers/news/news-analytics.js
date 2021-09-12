@@ -15,6 +15,7 @@ router.get('/', async (req, res) => {
       analyticsService.getSummary(),
       analyticsService.getCountByCategory(),
       analyticsService.getDocCountByDayAndCategory(),
+      analyticsService.getWordFrequency()
     ])
 
     if (data.filter(obj => obj === null).length > 0) {
@@ -26,7 +27,8 @@ router.get('/', async (req, res) => {
       data: {
         summary: data[0],
         countByCategory: data[1],
-        docCountByDayAndCategory: data[2]
+        docCountByDayAndCategory: data[2],
+        wordFrequency: data[3]
       }
     });
 
