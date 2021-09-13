@@ -81,6 +81,48 @@ class NewsAnalytics {
     }
   }
 
+  async getDocCountByDay() {
+    try {
+      const res = await this.client.search({
+        index: this.indices.NEWS,
+        body: {
+          "size": 0,
+          "query": {
+            "range": {
+              "publishedAt": {
+                "gte": "now-1y/d",
+                "lte": "now/d"
+              }
+            }
+          },
+          "aggs": {
+            "docCountByDay": {
+              "date_histogram": {
+                "field": "publishedAt",
+                "calendar_interval": "1d"
+              }
+            }
+          }
+        }
+      });
+
+      const docCountByDay = [];
+      const date = [];
+      res.body.aggregations.docCountByDay.buckets.forEach(obj => {
+        date.push(obj.key);
+        docCountByDay.push(obj.doc_count);
+      })
+
+      return {
+        docCountByDay,
+        date
+      }
+    } catch (e) {
+      console.log('getDocCountByDay', e);
+      return null
+    }
+  }
+
   async getDocCountByDayAndCategory() {
     try {
       const categories = ["headline", "business", "entertainment", "health", "science", "sports", "technology"];
@@ -113,12 +155,10 @@ class NewsAnalytics {
         }
       });
 
-      const docCountByDay = [];
       const docCountByDayAndCategory = [];
       const date = [];
       res.body.aggregations.docCountByDay.buckets.forEach(obj => {
         date.push(obj.key);
-        docCountByDay.push(obj.doc_count);
         const _docCountByDayAndCategory = new Array(categories.length).fill(0);
         obj.byCategory.buckets.forEach(obj => {
           const index = categories.indexOf(obj.key);
@@ -130,7 +170,6 @@ class NewsAnalytics {
       })
 
       return {
-        docCountByDay,
         docCountByDayAndCategory,
         date,
         categories
@@ -147,21 +186,46 @@ class NewsAnalytics {
         index: this.indices.NEWS,
         body: {
           "size": 0,
+          "query": {
+            "range": {
+              "publishedAt": {
+                "gte": "2020-01-01||/d"
+              }
+            }
+          },
           "aggs": {
-            "wordFrequency": {
-              "terms": {
-                "field": "description",
-                "size": 50,
-                "exclude": wordCloudBlacklist
+            "byYear": {
+              "date_histogram": {
+                "field": "publishedAt",
+                "calendar_interval": "1y"
+              },
+              "aggs": {
+                "wordFrequency": {
+                  "terms": {
+                    "field": "description",
+                    "size": 80,
+                    "exclude": wordCloudBlacklist
+                  }
+                }
               }
             }
           }
         }
       });
-      return res.body.aggregations.wordFrequency.buckets.map(obj => ({
-        word: obj.key,
-        count: obj.doc_count
-      }));
+      const data = [];
+      res.body.aggregations.byYear.buckets.map(bucket => {
+        const yearBucket = {};
+        yearBucket.year = bucket.key_as_string;
+        yearBucket.data = [];
+        bucket.wordFrequency.buckets.forEach(obj => {
+          yearBucket.data.push({
+            word: obj.key,
+            count: obj.doc_count
+          });
+        });
+        data.push(yearBucket);
+      })
+      return data
     } catch (e) {
       console.log('getWordFrequency', e);
       return null

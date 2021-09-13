@@ -3,7 +3,15 @@ const media = [
   "business", "insider"
 ];
 
+const weekdays = [
+  'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+];
+
+const numbers = ['1', '2', '3', '4', '5', '6', '7', '8' , '9', '10'];
+
 const blacklist = [
+  ...weekdays,
+  ...numbers,
   ...media,
   "null", "news", "new", "first", "now",
   "one", "two",

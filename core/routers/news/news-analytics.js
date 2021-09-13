@@ -14,6 +14,7 @@ router.get('/', async (req, res) => {
     const data = await Promise.all([
       analyticsService.getSummary(),
       analyticsService.getCountByCategory(),
+      analyticsService.getDocCountByDay(),
       analyticsService.getDocCountByDayAndCategory(),
       analyticsService.getWordFrequency()
     ])
@@ -27,8 +28,9 @@ router.get('/', async (req, res) => {
       data: {
         summary: data[0],
         countByCategory: data[1],
-        docCountByDayAndCategory: data[2],
-        wordFrequency: data[3]
+        docCountByDay: data[2],
+        docCountByDayAndCategory: data[3],
+        wordFrequency: data[4]
       }
     });
 
