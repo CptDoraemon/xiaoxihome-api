@@ -215,7 +215,7 @@ class NewsAnalytics {
       const data = [];
       res.body.aggregations.byYear.buckets.map(bucket => {
         const yearBucket = {};
-        yearBucket.year = bucket.key_as_string;
+        yearBucket.year = new Date(bucket.key_as_string).getUTCFullYear();
         yearBucket.data = [];
         bucket.wordFrequency.buckets.forEach(obj => {
           yearBucket.data.push({
