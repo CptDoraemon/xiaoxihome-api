@@ -212,4 +212,8 @@ class NewsService {
   }
 }
 
-module.exports = NewsService
+module.exports = {
+  NewsService,
+  CATEGORIES,
+  CATEGORY_VALUES
+}

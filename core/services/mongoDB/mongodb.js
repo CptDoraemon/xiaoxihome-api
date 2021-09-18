@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const NewsService = require('./news');
+const NewsService = require('./news').NewsService;
 
 class MongoDBService {
   db = null;
@@ -33,4 +33,6 @@ class MongoDBService {
   }
 }
 
-module.exports = MongoDBService
+const mongoDBService = new MongoDBService();
+
+module.exports = mongoDBService

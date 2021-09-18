@@ -18,4 +18,6 @@ class Elasticsearch {
 	}
 }
 
-module.exports = Elasticsearch
+const elasticsearchService = new Elasticsearch();
+
+module.exports = elasticsearchService

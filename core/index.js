@@ -9,8 +9,11 @@ app.use(bodyParser.urlencoded({
 }))
 app.use(bodyParser.json())
 
-const MongoDBService = require('./services/mongoDB/mongodb');
-const ElasticsearchService = require('./services/elasticsearch/elasticsearch');
+const mongoDBService = require('./services/mongoDB/mongodb');
+const elasticsearchService = require('./services/elasticsearch/elasticsearch');
+const scheduleJobs = require('./services/schedule-jobs/scheduler');
+const initMessageQ = require('./services/messageQ/init');
+
 const newsAnalyticsRouter = require('./routers/news/news-analytics');
 const searchNewsRouter = require('./routers/search-news/search-news');
 const getNewsGraphQL = require('./routers/news/news');
@@ -24,12 +27,11 @@ app.use(helmet());
 
 (async () => {
   try {
-    const mongoDBService = new MongoDBService();
     await mongoDBService.connect();
     mongoDBService.finishSetUp();
-    await mongoDBService.newsService.update();
-
-    const elasticsearchService = new ElasticsearchService();
+    // await mongoDBService.newsService.update();
+    await initMessageQ();
+    scheduleJobs();
 
     app.use((req, res, next) => {
       req.services = {};
