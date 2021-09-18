@@ -22,6 +22,9 @@ const getNewsInCategory = async (category) => {
     //   throw new Error()
     // }
     // return data.articles;
+    if (Math.random() > 0.5) {
+      throw new Error()
+    }
     console.log('retrieved news in category: ', category);
     return mockNewsResult[category].articles
   } catch (e) {
@@ -72,7 +75,8 @@ const handleMessage = async (msg, channel) => {
       console.log(updatedMsg);
     } else {
       // push updatedMsg back to queue after 5 minutes
-      await new Promise(r => setTimeout(r, 1000 * 60 * 5))
+      // await new Promise(r => setTimeout(r, 1000 * 60 * 5))
+      await new Promise(r => setTimeout(r, 1000))
       await requestNewsApiCall(updatedMsg)
     }
     channel.ack(msg);
@@ -88,12 +92,9 @@ const consumeRequestNewsApiCall = async () => {
   try {
     const channel = await getChannel();
     if (!channel) return;
-
-    const exchange = getGetNewsExchange(channel);
-    const routingKey = 'get-news';
-
-    const q = await channel.assertQueue('', {exclusive: false});
-    channel.bindQueue(q.queue, exchange, routingKey);
+    const {
+      q
+    } = await getGetNewsExchange(channel);
     channel.consume(q.queue, (msg) => handleMessage(msg, channel), {
       noAck: false
     });

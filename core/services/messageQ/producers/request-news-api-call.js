@@ -9,12 +9,11 @@ const requestNewsApiCall = async (_msg) => {
     const channel = await getChannel();
     if (!channel) return;
 
-    const exchange = getGetNewsExchange(channel);
-    const routingKey = 'get-news';
+    const {
+      exchange,
+      routingKey,
+    } = await getGetNewsExchange(channel);
 
-    channel.assertExchange(exchange, 'direct', {
-      durable: true
-    });
     const msg = _msg || {
       data: {},
       attempted: 0
