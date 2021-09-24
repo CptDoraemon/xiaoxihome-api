@@ -1,5 +1,5 @@
 const schedule = require('node-schedule');
-const requestNewsApiCall = require('../messageQ/producers/request-news-api-call');
+const getNews = require('../messageQ/producers/get-news');
 
 // fetch news from API every 3 hours
 // flow:
@@ -10,7 +10,7 @@ const requestNewsApiCall = require('../messageQ/producers/request-news-api-call'
 // 5. mongoDB date stream event push a message to queue
 // 6. consumer write mongoDB data to elasticsearch
 const fetchNewsJob = () => {
-  requestNewsApiCall();
+  getNews();
   // const job = schedule.scheduleJob('0 */1 * * * *', function(){
   //   requestNewsApiCall();
   //   console.log('scheduled fetching news invoked', new Date());

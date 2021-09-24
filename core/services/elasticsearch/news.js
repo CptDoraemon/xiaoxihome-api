@@ -193,6 +193,39 @@ class NewsService {
 			return null
 		}
 	}
+
+	async saveMongoDocsToEs(docs) {
+		console.log(docs);
+		try {
+			const body = docs.flatMap(doc => [
+				{
+					index: {
+						_index: this.indices.NEWS
+					}
+				},
+				{
+					mongoId: doc._id,
+					source: doc.source.name,
+					author: doc.author,
+					title: doc.title,
+					description: doc.description,
+					publishedAt: doc.publishedAt,
+					content: doc.content,
+					category: doc.category,
+					url: doc.url,
+					urlToImage: doc.urlToImage
+				}
+			])
+			await this.client.bulk({
+				refresh: true,
+				body
+			})
+			return true
+		} catch (e) {
+			console.log(e);
+			return false
+		}
+	}
 }
 
 module.exports = NewsService

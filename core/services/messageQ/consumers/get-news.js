@@ -1,10 +1,9 @@
 const getChannel = require('../channel');
-const {
-  CATEGORY_VALUES: newsCategoryValues
-} = require('../../mongoDB/news');
 const {getGetNewsExchange} = require('../exchanges');
 const mockNewsResult = require('./mock-news-results');
-const requestNewsApiCall = require('../producers/request-news-api-call');
+const getNewsProducer = require('../producers/get-news');
+const cloneDeep = require('lodash/cloneDeep');
+const saveToMongoProducer = require('../producers/save-to-mongo');
 
 const getNewsInCategory = async (category) => {
   try {
@@ -22,31 +21,36 @@ const getNewsInCategory = async (category) => {
     //   throw new Error()
     // }
     // return data.articles;
-    if (Math.random() > 0.5) {
-      throw new Error()
-    }
     console.log('retrieved news in category: ', category);
-    return mockNewsResult[category].articles
+    const rawArticles = cloneDeep(mockNewsResult[category].articles);
+    // append requestedAt, and category into object
+    rawArticles.forEach(obj => {
+      obj.requestedAt = Date.now().toString();
+      obj.category = category;
+    })
+    return rawArticles
   } catch (e) {
     console.log('getNewsInCategory error: ', category, new Date().toISOString(), e);
     return false
   }
 }
 
-const getNews = async (msg) => {
+const requestNews = async (msg) => {
   try {
-    console.log('getNews', msg)
     const data = msg.data;
     const categories = Object.keys(data);
 
     let index = 0;
     const handleOneCategory = async () => {
       const category = categories[index];
-      const articles = await getNewsInCategory(category);
-      if (articles !== false) {
-        data[category] = articles
+      if (!data[category]) {
+        // only request if this category field is still false
+        const articles = await getNewsInCategory(category);
+        if (articles !== false) {
+          data[category] = articles
+        }
+        await new Promise(r => setTimeout(r, 5000));
       }
-      await new Promise(r => setTimeout(r, 5000));
 
       index++;
       if (index < categories.length) {
@@ -57,7 +61,7 @@ const getNews = async (msg) => {
 
     return msg
   } catch (e) {
-    console.log('getNews ', e);
+    console.log('requestNews ', e);
     return false
   }
 }
@@ -66,29 +70,39 @@ const handleMessage = async (msg, channel) => {
   try {
     if (msg === null) return;
     const msgContent = JSON.parse(msg.content.toString());
-    const updatedMsg = await getNews(msgContent);
+    const updatedMsg = await requestNews(msgContent);
     updatedMsg.attempted++;
-    if (updatedMsg.attempted === 3 || Object.values(updatedMsg.data).filter(data => data === false).length === 0) {
+    if (Date.now() - updatedMsg.created >= 20 * 60 * 1000) {
+      // discard timeout task
+    } else if (updatedMsg.attempted >= 3 || Object.values(updatedMsg.data).filter(data => data === false).length === 0) {
       // reached max attempts or job finished
       // push to the next in pipeline
-      // TODO: next
-      console.log(updatedMsg);
+      // need to convert obj to array of RawArticle
+      const articles = [];
+      Object.values(updatedMsg.data).forEach(articlesInCategory => {
+        articlesInCategory.forEach(article => articles.push(article))
+      })
+      await saveToMongoProducer(articles);
     } else {
       // push updatedMsg back to queue after 5 minutes
       // await new Promise(r => setTimeout(r, 1000 * 60 * 5))
       await new Promise(r => setTimeout(r, 1000))
-      await requestNewsApiCall(updatedMsg)
+      await getNewsProducer(updatedMsg)
     }
     channel.ack(msg);
   } catch (e) {
-    console.log('requestNewsApiCall, handleMessage ', e);
+    console.log('getNews, handleMessage ', e);
     channel.nack(msg, {
       requeue: true
     });
   }
 }
 
-const consumeRequestNewsApiCall = async () => {
+/**
+ * fill in the fields that created by producer
+ * eventually save an array of RawArticle into save-to-mongo queue
+ */
+const getNews = async () => {
   try {
     const channel = await getChannel();
     if (!channel) return;
@@ -99,8 +113,8 @@ const consumeRequestNewsApiCall = async () => {
       noAck: false
     });
   } catch (e) {
-    console.log('requestNewsApiCall ', e)
+    console.log('getNews consumer ', e)
   }
 }
 
-module.exports = consumeRequestNewsApiCall
+module.exports = getNews

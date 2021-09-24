@@ -29,7 +29,6 @@ app.use(helmet());
   try {
     await mongoDBService.connect();
     mongoDBService.finishSetUp();
-    // await mongoDBService.newsService.update();
     await initMessageQ();
     scheduleJobs();
 
