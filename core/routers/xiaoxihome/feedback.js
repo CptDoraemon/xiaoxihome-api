@@ -1,6 +1,6 @@
 const mongoose = require ("mongoose");
 const router = require('express').Router();
-const sendEmailToMyself = require('../../services/send-email-to-myself').sendEmailToMyself;
+const sendEmailToMyself = require('../../services/aws/send-email-to-myself');
 
 const Feedback = mongoose.model('Feedback', new mongoose.Schema({
   name: {

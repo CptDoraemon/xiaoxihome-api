@@ -1,11 +1,6 @@
-const AWS = require('aws-sdk');
+const AWS = require('./init');
 
-AWS.config = new AWS.Config({
-  accessKeyId: process.env.AWS_ACCESS_ID,
-  secretAccessKey: process.env.AWS_SECRET_KEY,
-  region: process.env.AWS_SES_REGION
-});
-const ses = new AWS.SES({apiVersion: '2010-12-01'});
+const ses = new AWS.SES({apiVersion: '2010-12-01', region: process.env.AWS_SES_REGION});
 
 const getEmailParam = ({name, email, message, date}) => {
   return {
@@ -46,6 +41,4 @@ const sendEmailToMyself = ({name, email, message, date}) => {
   })
 };
 
-module.exports = {
-  sendEmailToMyself
-}
+module.exports = sendEmailToMyself
