@@ -12,7 +12,6 @@ const backupNewsData = require('./back-up-mongo');
 // 6. consumer write mongoDB data to elasticsearch
 const fetchNewsJob = () => {
   // getNews();
-  backupNewsData();
   // const job = schedule.scheduleJob('0 */1 * * * *', function(){
   //   requestNewsApiCall();
   //   console.log('scheduled fetching news invoked', new Date());
@@ -21,8 +20,18 @@ const fetchNewsJob = () => {
   // console.log('fetchNewsJob registered, next invocation is ', new Date(ms));
 }
 
+const backupNewsDataJob = () => {
+  const job = schedule.scheduleJob('0 0 2 * * *', function(){
+    backupNewsData();
+    console.log('scheduled dump news backup invoked', new Date());
+  });
+  const ms = job.nextInvocation()._date.ts;
+  console.log('backupNewsDataJob registered, next invocation is ', new Date(ms));
+}
+
 const scheduleJobs = () => {
-  fetchNewsJob()
+  fetchNewsJob();
+  backupNewsDataJob();
 }
 
 module.exports = scheduleJobs
