@@ -11,13 +11,12 @@ const backupNewsData = require('./back-up-mongo');
 // 5. mongoDB date stream event push a message to queue
 // 6. consumer write mongoDB data to elasticsearch
 const fetchNewsJob = () => {
-  // getNews();
-  // const job = schedule.scheduleJob('0 */1 * * * *', function(){
-  //   requestNewsApiCall();
-  //   console.log('scheduled fetching news invoked', new Date());
-  // });
-  // const ms = job.nextInvocation()._date.ts;
-  // console.log('fetchNewsJob registered, next invocation is ', new Date(ms));
+  const job = schedule.scheduleJob('0 0 */3 * * *', function(){
+    getNews();
+    console.log('scheduled fetching news invoked', new Date());
+  });
+  const ms = job.nextInvocation()._date.ts;
+  console.log('fetchNewsJob registered, next invocation is ', new Date(ms));
 }
 
 const backupNewsDataJob = () => {

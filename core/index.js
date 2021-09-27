@@ -50,11 +50,11 @@ app.use(helmet());
     getNewsGraphQL('/api/news', app, elasticsearchService);
     app.use('/api/news-analytics', elasticsearchServiceMiddleware, newsAnalyticsRouter)
     app.use('/api/search-news', newsServiceMiddleware, elasticsearchServiceMiddleware, searchNewsRouter);
-    // app.use('/api/reversegeocoding', reverseGeocodingRouter);
-    // app.use('/api/weather', weatherRouter);
-    // app.use('/api/xiaoxihome', xiaoxihomeRouter);
-    // app.use('/api/v2ex', v2exRouter);
-    // app.use('/api/web-hooks', webHooks);
+    app.use('/api/reversegeocoding', reverseGeocodingRouter);
+    app.use('/api/weather', weatherRouter);
+    app.use('/api/xiaoxihome', xiaoxihomeRouter);
+    app.use('/api/v2ex', v2exRouter);
+    app.use('/api/web-hooks', webHooks);
 
     app.use((err, req, res, next) => {
       console.log(err);
