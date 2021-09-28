@@ -7,22 +7,23 @@ const saveToMongoProducer = require('../producers/save-to-mongo');
 
 const getNewsInCategory = async (category) => {
   try {
-    // const res = await axios.get('https://newsapi.org/v2/top-headlines', {
-    //   params: {
-    //     apiKey: process.env.NEWS_API_KEY,
-    //     country: 'ca',
-    //     ...category !== CATEGORIES.headline && {
-    //       category
-    //     }
-    //   }
-    // })
-    // const data = res.data;
-    // if (body.status !== 'ok') {
-    //   throw new Error()
-    // }
+    const res = await axios.get('https://newsapi.org/v2/top-headlines', {
+      params: {
+        apiKey: process.env.NEWS_API_KEY,
+        country: 'ca',
+        ...category !== CATEGORIES.headline && {
+          category
+        }
+      }
+    })
+    const data = res.data;
+    if (body.status !== 'ok') {
+      throw new Error()
+    }
     // return data.articles;
     console.log('retrieved news in category: ', category);
-    const rawArticles = cloneDeep(mockNewsResult[category].articles);
+    // const rawArticles = cloneDeep(mockNewsResult[category].articles);
+    const rawArticles = cloneDeep(data.articles);
     // append requestedAt, and category into object
     rawArticles.forEach(obj => {
       obj.requestedAt = Date.now().toString();
