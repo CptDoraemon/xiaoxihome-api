@@ -123,6 +123,18 @@ const bulkSave = async (array, client) => {
         bulkArray = [];
         console.log('saved: ', saved);
       }
+
+      if (saved % 100000 === 0) {
+        // flush on milestone to save memory
+        await client.indices.refresh({
+          index: Indices.NEWS,
+        });
+        await client.indices.flush({
+          index: Indices.NEWS,
+        });
+        await new Promise(r => setTimeout(r, 60000));
+      }
+
       if (hasNext) {
         await handleOne()
       }
