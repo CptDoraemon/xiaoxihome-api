@@ -1,16 +1,15 @@
-require('dotenv').config();
-const {
-  client,
-  connectToMongo
-} = require('./connect');
-const deleteIndicesIfExists = require('./reset')
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
+const mongoDBService = require('../mongoDB/mongodb');
+const elasticsearchService = require('../elasticsearch/elasticsearch');
+const deleteIndicesIfExists = require('./reset');
 
 const Indices = {
   'NEWS': 'news',
   'SEARCHED_KEYWORDS': 'searched-keywords'
 }
 
-const createNewsIndex = async () => {
+const createNewsIndex = async (client) => {
   await client.indices.create({
     index: Indices.NEWS,
     body: {
@@ -32,7 +31,7 @@ const createNewsIndex = async () => {
   console.log(`${Indices.NEWS} index created with mapping`);
 }
 
-const createSearchedKeywordIndex = async () => {
+const createSearchedKeywordIndex = async (client) => {
   await client.indices.create({
     index: Indices.SEARCHED_KEYWORDS,
     body: {
@@ -52,7 +51,7 @@ const createSearchedKeywordIndex = async () => {
   console.log(`${Indices.SEARCHED_KEYWORDS} index created with mapping`);
 }
 
-const bulkSave = async (array) => {
+const bulkSave = async (array, client) => {
   try {
     const body = array.flatMap(doc => [
       {
@@ -92,13 +91,18 @@ const bulkSave = async (array) => {
   const startedAt = Date.now();
 
   try {
-    const mongo = await connectToMongo();
+    if (!mongoDBService.db) {
+      await mongoDBService.connect();
+    }
+    const mongo = mongoDBService.db;
+    const client = elasticsearchService.client;
+
     await deleteIndicesIfExists(client, Object.values(Indices))
     const cursor = await mongo.collection('news').find().sort({"_id":1});
 
     // create indices
-    await createNewsIndex();
-    await createSearchedKeywordIndex();
+    await createNewsIndex(client);
+    await createSearchedKeywordIndex(client);
 
     // disable index refresh
     await client.indices.put_settings({
@@ -115,7 +119,7 @@ const bulkSave = async (array) => {
       saved++;
       const hasNext = await cursor.hasNext();
       if (bulkArray.length === 5000 || !hasNext) {
-        await bulkSave(bulkArray);
+        await bulkSave(bulkArray, client);
         bulkArray = [];
         console.log('saved: ', saved)
       }
