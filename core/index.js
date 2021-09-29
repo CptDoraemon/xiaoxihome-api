@@ -47,7 +47,7 @@ app.use(helmet());
       next()
     }
 
-    app.get('/api/ping', (req, res) => res.status(200).send());
+    app.get('/api/ping', (req, res) => res.json({status: 'ok'}));
     getNewsGraphQL('/api/news', app, elasticsearchService);
     app.use('/api/news-analytics', elasticsearchServiceMiddleware, newsAnalyticsRouter)
     app.use('/api/search-news', newsServiceMiddleware, elasticsearchServiceMiddleware, searchNewsRouter);
