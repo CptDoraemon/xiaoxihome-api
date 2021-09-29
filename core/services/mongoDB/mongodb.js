@@ -8,9 +8,8 @@ class MongoDBService {
   async connect() {
     const isConnected = await this._connect();
     if (!isConnected) {
-      setTimeout(async () => {
-        await this.connect()
-      }, 5000)
+      await new Promise(r => setTimeout(r, 5000));
+      await this.connect();
     }
   }
 
