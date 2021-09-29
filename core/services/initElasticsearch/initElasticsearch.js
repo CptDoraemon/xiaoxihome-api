@@ -118,10 +118,13 @@ const bulkSave = async (array, client) => {
       bulkArray.push(doc);
       saved++;
       const hasNext = await cursor.hasNext();
-      if (bulkArray.length === 5000 || !hasNext) {
+      if (bulkArray.length === 1000 || !hasNext) {
         await bulkSave(bulkArray, client);
         bulkArray = [];
-        console.log('saved: ', saved)
+        console.log('saved: ', saved);
+
+        // give a break let gc
+        await new Promise(r => setTimeout(r, 5000));
       }
       if (hasNext) {
         await handleOne()
