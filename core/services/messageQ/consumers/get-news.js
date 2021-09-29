@@ -5,6 +5,9 @@ const getNewsProducer = require('../producers/get-news');
 const cloneDeep = require('lodash/cloneDeep');
 const saveToMongoProducer = require('../producers/save-to-mongo');
 const axios = require('axios');
+const {
+  CATEGORY_VALUES: newsCategoryValues
+} = require('../../mongoDB/news');
 
 const getNewsInCategory = async (category) => {
   try {
@@ -12,13 +15,13 @@ const getNewsInCategory = async (category) => {
       params: {
         apiKey: process.env.NEWS_API_KEY,
         country: 'ca',
-        ...category !== CATEGORIES.headline && {
+        ...category !== newsCategoryValues.headline && {
           category
         }
       }
     })
     const data = res.data;
-    if (body.status !== 'ok') {
+    if (data.status !== 'ok') {
       throw new Error()
     }
     // return data.articles;
@@ -82,9 +85,13 @@ const handleMessage = async (msg, channel) => {
       // need to convert obj to array of RawArticle
       const articles = [];
       Object.values(updatedMsg.data).forEach(articlesInCategory => {
-        articlesInCategory.forEach(article => articles.push(article))
+        if (Array.isArray(articlesInCategory)) {
+          articlesInCategory.forEach(article => articles.push(article))
+        }
       })
-      await saveToMongoProducer(articles);
+      if (articles.length) {
+        await saveToMongoProducer(articles);
+      }
     } else {
       // push updatedMsg back to queue after 5 minutes
       // await new Promise(r => setTimeout(r, 1000 * 60 * 5))
