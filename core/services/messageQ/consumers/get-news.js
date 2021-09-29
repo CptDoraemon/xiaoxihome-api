@@ -4,6 +4,7 @@ const mockNewsResult = require('./mock-news-results');
 const getNewsProducer = require('../producers/get-news');
 const cloneDeep = require('lodash/cloneDeep');
 const saveToMongoProducer = require('../producers/save-to-mongo');
+const axios = require('axios');
 
 const getNewsInCategory = async (category) => {
   try {
