@@ -1,9 +1,9 @@
 const util = require('util');
-const exec = util.promisify(require('child_process').exec);
 const path = require('path');
 const fs = require('fs');
 const {saveNewsBackup, listNewsBackups, deleteNewsBackup} = require('../aws/s3');
 const {sendNotification} = require('../aws/ses');
+const mongoService = require('../mongoDB/mongodb');
 
 const deleteLocal = async (dir) => {
   try {
@@ -37,17 +37,17 @@ const deleteS3Old = async () => {
 }
 
 const mongoDump = async (filepath) => {
+  const writeOneDoc = async (cursor) => {
+    const doc = await cursor.next();
+    await fs.promises.appendFile(filepath, JSON.stringify(doc) + "\r\n");
+    const hasNext = await cursor.hasNext();
+    if (hasNext) {
+      await writeOneDoc(cursor)
+    }
+  }
   try {
-    const cmd = `
-      mongoexport
-      --uri ${process.env.MONGODB_URI}
-      --username ${process.env.MONGODB_USER}
-      --password ${process.env.MONGODB_PASS}
-      --collection news
-      --type json
-      --out ${filepath}
-      --authenticationDatabase admin`;
-    await exec(cmd.replace(/\n/g, "\\\n"));
+    const cursor = await mongoService.newsService.collections['news'].find().sort({"_id":1});
+    await writeOneDoc(cursor);
     console.log('mongo dump succeeded: ', filepath);
   } catch (e) {
     console.log('failed to dump mongo ', e);
