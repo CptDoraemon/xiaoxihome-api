@@ -61,8 +61,8 @@ jobs:
             StrictHostKeyChecking no
           END
 
-      - name: Pull docker-compose
-        run: ssh $HOST "cd $WKDIR && git pull"
+#      - name: Pull docker-compose
+#        run: ssh $HOST "cd $WKDIR && git pull"
 
       - name: Pull
         run: ssh $HOST "cd $WKDIR && sudo docker-compose pull"
