@@ -36,8 +36,7 @@ jobs:
           ECR_REPOSITORY: xiaoxihome-api
           IMAGE_TAG: latest
         run: |
-          cd core
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./core
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
 
       - name: Configure SSH
