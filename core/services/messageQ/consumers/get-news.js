@@ -15,6 +15,7 @@ const getNewsInCategory = async (category) => {
       params: {
         apiKey: process.env.NEWS_API_KEY,
         country: 'ca',
+        pageSize: 100,
         ...category !== newsCategoryValues.headline && {
           category
         }
