@@ -1,13 +1,10 @@
 const getChannel = require('../channel');
 const {getGetNewsExchange} = require('../exchanges');
-const mockNewsResult = require('./mock-news-results');
 const getNewsProducer = require('../producers/get-news');
 const cloneDeep = require('lodash/cloneDeep');
 const saveToMongoProducer = require('../producers/save-to-mongo');
 const axios = require('axios');
-const {
-  CATEGORY_VALUES: newsCategoryValues
-} = require('../../mongoDB/news');
+const {CATEGORIES} = require('../../mongoDB/news');
 
 const getNewsInCategory = async (category) => {
   try {
@@ -16,7 +13,7 @@ const getNewsInCategory = async (category) => {
         apiKey: process.env.NEWS_API_KEY,
         country: 'ca',
         pageSize: 100,
-        ...category !== newsCategoryValues.headline && {
+        ...category !== CATEGORIES.headline && {
           category
         }
       }
