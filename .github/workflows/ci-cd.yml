@@ -77,4 +77,4 @@ jobs:
         run: ssh $HOST "cd $WKDIR && sudo docker-compose stop"
 
       - name: Up
-        run: ssh $HOST "cd $WKDIR && sudo docker-compose up --detach"
+        run: ssh $HOST "cd $WKDIR && sudo docker-compose up -d"
