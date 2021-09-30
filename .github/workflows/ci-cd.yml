@@ -65,9 +65,7 @@ jobs:
         run: ssh $HOST "cd $WKDIR && git pull"
 
       - name: Remote docker login
-        run: |
-          aws ecr get-login-password
-          docker login --password-stdin -u AWS 298551144282.dkr.ecr.ca-central-1.amazonaws.com/xiaoxihome-api
+        run: ssh $HOST "cd $WKDIR && aws ecr get-login-password && docker login --password-stdin -u AWS ${{ steps.login-ecr.outputs.registry }}/xiaoxihome-api"
 
       - name: Pull
         run: ssh $HOST "cd $WKDIR && sudo docker-compose pull"
