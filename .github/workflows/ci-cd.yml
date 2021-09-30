@@ -68,7 +68,7 @@ jobs:
         run: >
           ssh $HOST "
           cd $WKDIR &&
-          docker login -u AWS -p $(aws ecr get-login-password --region the-region-you-are-in) ${{ steps.login-ecr.outputs.registry }}/xiaoxihome-api "
+          docker login -u AWS -p $(aws ecr get-login-password) ${{ steps.login-ecr.outputs.registry }}/xiaoxihome-api "
 
       - name: Pull
         run: ssh $HOST "cd $WKDIR && sudo docker-compose pull"
