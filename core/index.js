@@ -22,6 +22,7 @@ const weatherRouter = require('./routers/weather/weather');
 const reverseGeocodingRouter = require('./routers/weather/reverse-geocoding');
 const v2exRouter = require('./routers/v2ex/v2ex');
 const webHooks = require('./routers/web-hooks/web-hooks');
+const backupDB = require('./routers/backup-db/backup-db');
 
 app.use(helmet());
 
@@ -56,6 +57,7 @@ app.use(helmet());
     app.use('/api/xiaoxihome', xiaoxihomeRouter);
     app.use('/api/v2ex', v2exRouter);
     app.use('/api/web-hooks', webHooks);
+    app.use('/api/backup-db', backupDB);
 
     app.use((err, req, res, next) => {
       console.log(err);

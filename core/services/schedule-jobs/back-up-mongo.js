@@ -1,4 +1,3 @@
-const util = require('util');
 const path = require('path');
 const fs = require('fs');
 const {saveNewsBackup, listNewsBackups, deleteNewsBackup} = require('../aws/s3');

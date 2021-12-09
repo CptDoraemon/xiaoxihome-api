@@ -6,7 +6,8 @@ const s3 = new AWS.S3({
   region: 'ca-central-1',
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  s3DisableBodySigning: true
+  s3DisableBodySigning: true,
+  maxRetries: 3
 });
 
 const deleteObject = async (bucket, key) => {
@@ -17,9 +18,11 @@ const listObjects = async (bucket) => {
   return await s3.listObjects({Bucket: bucket}).promise()
 }
 
-const putObject = async (bucket, key, filepath) => {
+// s3.upload vs s3.puObject
+// https://github.com/aws/aws-sdk-js/issues/281
+const upload = async (bucket, key, filepath) => {
   const stream = fs.createReadStream(filepath);
-  await s3.putObject({
+  await s3.upload({
     Bucket: bucket,
     Key: key,
     Body: stream
@@ -34,7 +37,7 @@ const listNewsBackups = async () => {
 }
 
 const saveNewsBackup = async (filename, filepath) => {
-  await putObject(newsBackupBucket, filename, filepath)
+  await upload(newsBackupBucket, filename, filepath)
 }
 
 const deleteNewsBackup = async (key) => {
