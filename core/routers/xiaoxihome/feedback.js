@@ -46,7 +46,7 @@ router.post('/feedback', async (req, res) => {
 
     if (e instanceof mongoose.Error) {
       if (e.message) {
-        message = e.message
+        message = e.message;
       }
     }
 
