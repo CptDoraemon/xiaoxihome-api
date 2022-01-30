@@ -39,7 +39,7 @@ router.post('/feedback', async (req, res) => {
     sendXiaoxihomeFeedbackEmail({name, email, message, date});
 
     return res.json({
-      response: 'Thank you for your message, I\'ll get back to you soon.'
+      status: 'ok'
     });
   } catch (e) {
     let message = 'Server error, please try again later';
@@ -50,7 +50,10 @@ router.post('/feedback', async (req, res) => {
       }
     }
 
-    return res.json({response: message});
+    return res.json({
+      status: 'error',
+      message
+    });
   }
 });
 
