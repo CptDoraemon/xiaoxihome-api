@@ -1,6 +1,19 @@
 const mongoose = require ("mongoose");
 const router = require('express').Router();
 const {sendXiaoxihomeFeedbackEmail} = require('../../services/aws/ses');
+const cors = require("cors");
+
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://www.xiaoxihome.com',
+    'https://xiaoxihome.com',
+    'https://xiaoxihome-202108.vercel.app/'
+  ],
+  maxAge: 31536000,
+  methods: 'POST'
+};
+router.use(cors(corsOptions));
 
 const Feedback = mongoose.model('Feedback', new mongoose.Schema({
   name: {
