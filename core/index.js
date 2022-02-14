@@ -7,7 +7,13 @@ const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({
   extended: true
 }))
-app.use(bodyParser.json())
+app.use(bodyParser.json({
+  verify: (req, res, buf) => {
+    if (req.path.includes('django-discussion-board')) {
+      req.rawBody = buf.toString('utf8')
+    }
+  }
+}));
 
 const mongoDBService = require('./services/mongoDB/mongodb');
 const elasticsearchService = require('./services/elasticsearch/elasticsearch');
